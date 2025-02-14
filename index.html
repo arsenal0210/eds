@@ -4,44 +4,36 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>사내물류 소통</title>
-    
-    <!-- PWA 관련 메타 태그 -->
-    <meta name="theme-color" content="#3498db">
-    <link rel="manifest" href="manifest.json">
-    
     <link rel="stylesheet" href="style.css">
     <script defer src="app.js"></script>
-
-    <!-- 서비스 워커 등록 -->
-    <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('service-worker.js')
-                .then(() => console.log("✅ 서비스 워커 등록 완료!"))
-                .catch(error => console.log("❌ 서비스 워커 등록 실패:", error));
-        }
-    </script>
 </head>
 <body>
 
     <h2>📦 사내물류 소통</h2>
 
-    <!-- 🏷️ 탭 메뉴 -->
-    <div class="tab-container">
-        <button class="tab-button active" onclick="openTab('deliveryTab')">📤 배송 입력</button>
-        <button class="tab-button" onclick="openTab('specialTab')">💬 특이사항 입력</button>
+    <!-- 🔐 로그인 -->
+    <div id="authContainer">
+        <h3>🔐 로그인</h3>
+        <input type="email" id="email" placeholder="회사 이메일 입력">
+        <input type="password" id="password" placeholder="비밀번호 입력">
+        <button onclick="loginUser()">로그인</button>
     </div>
 
-    <div class="container">
-        <!-- 📤 배송 입력 탭 -->
+    <!-- 🏷️ 탭 메뉴 -->
+    <div id="mainContainer" style="display:none;">
+        <button onclick="openTab('deliveryTab')">📤 배송 입력</button>
+        <button onclick="openTab('chatTab')">💬 채팅</button>
+
+        <!-- 📤 배송 입력 -->
         <div id="deliveryTab" class="tab-content active">
             <h3>📤 배송 정보 입력</h3>
             <label>📅 배송 날짜</label>
             <input type="date" id="deliveryDate">
-
+            
             <label>⏰ 배송 시간</label>
-            <input type="time" id="deliveryTime" min="08:00" max="17:00" step="600">
+            <input type="time" id="deliveryTime">
 
-            <label>발신지</label>
+            <label>📍 발신지</label>
             <select id="sender">
                 <option value="DSR문서실">DSR문서실</option>
                 <option value="화성문서실">화성문서실</option>
@@ -50,7 +42,7 @@
                 <option value="온양문서실">온양문서실</option>
             </select>
 
-            <label>수신지</label>
+            <label>📍 수신지</label>
             <select id="receiver">
                 <option value="온양문서실">온양문서실</option>
                 <option value="천안문서실">천안문서실</option>
@@ -59,7 +51,7 @@
                 <option value="DSR문서실">DSR문서실</option>
             </select>
 
-            <label>🚌 버스 번호</label>
+            <label>🚌 버스번호</label>
             <select id="busNumber">
                 <option value="충남70바 5589">충남70바 5589</option>
                 <option value="충남72가 7393">충남72가 7393</option>
@@ -69,24 +61,14 @@
                 <option value="충남72바 9550">충남72바 9550</option>
             </select>
 
-            <label>🎒 가방 개수</label>
-            <input type="number" id="bagCount" min="0" value="0">
-
-            <label>📦 박스 개수</label>
-            <input type="number" id="boxCount" min="0" value="0">
-
-            <label>🔄 대차 개수</label>
-            <input type="number" id="dollyCount" min="0" value="0">
-
             <button onclick="submitLogistics()">📤 배송 등록</button>
-
-            <h3>📜 배송 내역</h3>
             <div id="logisticsList"></div>
         </div>
 
-        <!-- 💬 특이사항 입력 탭 -->
-        <div id="specialTab" class="tab-content">
-            <h3>💬 추가 특이사항 입력</h3>
+        <!-- 💬 채팅 -->
+        <div id="chatTab" class="tab-content">
+            <h3>💬 채팅</h3>
+            
             <label>👤 닉네임</label>
             <select id="nickname">
                 <option value="DSR문서실">DSR문서실</option>
@@ -96,24 +78,31 @@
                 <option value="온양문서실">온양문서실</option>
             </select>
 
-            <div class="chat-box">
-                <div id="pinnedMessageContainer">
-                    <div id="pinnedMessage"></div>
-                    <button id="unpinButton" onclick="unpinMessage()">❌</button>
-                </div>
-                <div id="chatBox"></div>
-            </div>
-
-            <input type="text" id="chatMessage" placeholder="메시지를 입력하세요">
+            <input type="text" id="chatMessage">
             <button onclick="sendMessage()">📩 전송</button>
 
-            <h3>🚀 매크로 메시지 입력</h3>
+            <!-- 📌 고정된 메시지 표시 -->
+            <div id="pinnedMessageContainer">
+                <div id="pinnedMessage"></div>
+                <button onclick="unpinMessage()">❌ 고정 해제</button>
+            </div>
+
+            <div id="chatBox"></div>
+
+            <!-- 🚀 매크로 버튼 -->
+            <h3>🚀 매크로 메시지</h3>
             <div class="macro-container">
-                <div class="macro-column" id="macroButtonsLeft"></div>
-                <div class="macro-column" id="macroButtonsRight"></div>
+                <button onclick="sendMacroMessage('온양출발 🚍')">온양출발</button>
+                <button onclick="sendMacroMessage('천안출발 🚍')">천안출발</button>
+                <button onclick="sendMacroMessage('기흥출발 🚍')">기흥출발</button>
+                <button onclick="sendMacroMessage('DSR출발 🚍')">DSR출발</button>
+                <button onclick="sendMacroMessage('화성출발 🚍')">화성출발</button>
+                <button onclick="sendMacroMessage('물건수령 📦')">물건수령</button>
             </div>
         </div>
     </div>
 
 </body>
 </html>
+<link rel="manifest" href="/manifest.json">
+
